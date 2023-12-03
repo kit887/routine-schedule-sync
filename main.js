@@ -1,4 +1,4 @@
-const ROUTINE = ['pull', '', 'push', 'aerobic', '','leg', '']; // ジムに行くルーチン
+const ROUTINE = ['pull', '', 'push', '', 'aerobic', '','leg', '']; // ジムに行くルーチン
 const SN_SCHEDULE = "スケジュール";
 const SN_HOLIDAYS = "やすみ";
 const NUM_WEEKS = 2; // 先n週間分のスケジュールを生成
@@ -17,6 +17,11 @@ function Weekly(){
   writeToSpreadsheet(ss,sd);
 }
 
+//指定実行
+function Change(date,){
+  const ss = SpreadsheetApp.getActive();
+
+}
 //スケジュールメインルーチン
 function createSchedule(ss) {
   const sc = ss.getSheetByName(SN_SCHEDULE);
@@ -26,7 +31,6 @@ function createSchedule(ss) {
   console.log(last_data);
   //スケジュール作成
   let this_data = createSdfromLastSd(last_data);
-  //console.log(this_data);
   ///HOLIDAYS_OF_WEEKで指定された部分をあける（後ろにずらす）
   let indexlist = findIndexOnDays(this_data,HOLIDAYS_OF_WEEK);
   this_data = shiftDatesFromIndex(this_data,indexlist);
@@ -56,8 +60,10 @@ function findIndexOnDays(arr, targetDayIndices) {
 //指定したインデックス番号以降の日付をずらす
 function shiftDatesFromIndex(arr, startIndices) {
   for (const startIndex of startIndices) {
-    for (let j=startIndex; j<(arr.length-startIndex); j++) {
-      arr[j][0] = arr[j+1][0];
+    if(arr[startIndex][2]!==''){
+      for (let j=startIndex; j<(arr.length-startIndex); j++) {
+        arr[j][0] = arr[j+1][0];
+      }
     }
   }
   return arr;
@@ -89,7 +95,7 @@ function createSdfromLastSd(ld = undefined,date = new Date()) {
   if (ld === null || ld === undefined){
     startindex = 0;
   }else{
-    startindex = ld[1]+1;
+    startindex = ld[1];
     //前回のデータが昨日より前かどうかを調べて、昨日より前だった場合は休日を飛ばすのでstartindexを調整する
     if ((date.getTime() - ld[0].getTime())>(1000 * 60 * 60 * 24)){
       while (ROUTINE[startindex] = ''){startindex++;}
@@ -112,7 +118,6 @@ function createSdfromLastSd(ld = undefined,date = new Date()) {
   return val; 
 }
 
-
 //直近の日付のデータを抜き出す
 function findNearestPastDate(arr) {
   const today = new Date();
@@ -122,11 +127,11 @@ function findNearestPastDate(arr) {
   for (let i = 0; i < arr.length; i++) {
     let currentDate = arr[i][0];
     // currentDate が今日の日付よりも後であれば、次の日付を確認
-    if (currentDate >= today) {
+    if (currentDate > today) {
       continue;
     }
     // currentDate が今日の日付よりも前で、かつ最も近い日付よりも近い場合
-    if (closestDate === null || currentDate > closestDate) {
+    if (closestDate === null || currentDate >= closestDate) {
       closestDate = currentDate;
       closestIndex = i;
     }
@@ -134,6 +139,13 @@ function findNearestPastDate(arr) {
   // 最も近い過去の日付に対応する arr[i] を抜き出す
   let arrB = closestIndex !== -1 ? arr[closestIndex] : null;
   return arrB;
+}
+
+// 2つの日付が次の日かどうかを確認する関数
+function isNextDay(date1, date2) {
+  const nextDay = new Date(date1);
+  nextDay.setDate(nextDay.getDate() - 1); // date1の前日を取得
+  return nextDay.getTime() === date2.getTime();
 }
 
 // スプレッドシートに書き込む
